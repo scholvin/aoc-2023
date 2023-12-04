@@ -89,5 +89,32 @@ struct readers
             y++;
         }
     }
+};
+
+struct str
+{
+    static const char* ws;
+
+    // trim from end of string (right)
+    static inline std::string& rtrim(std::string& s, const char* t = ws)
+    {
+        s.erase(s.find_last_not_of(t) + 1);
+        return s;
+    }
+
+    // trim from beginning of string (left)
+    static inline std::string& ltrim(std::string& s, const char* t = ws)
+    {
+        s.erase(0, s.find_first_not_of(t));
+        return s;
+    }
+
+    // trim from both ends of string (right then left)
+    static inline std::string& trim(std::string& s, const char* t = ws)
+    {
+        return ltrim(rtrim(s, t), t);
+    }
 
 };
+    
+const char* str::ws = " \t\n\r\f\v";

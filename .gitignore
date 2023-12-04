@@ -5,3 +5,4 @@ bfast
 data/*-big.dat
 data/*-smol.dat
 data/*-med.dat
+src/*.swp
