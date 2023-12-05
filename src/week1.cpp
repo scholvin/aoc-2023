@@ -2,6 +2,7 @@
 #include "util.h"
 
 #include <set>
+#include <bitset>
 
 namespace week1
 {
@@ -299,5 +300,61 @@ namespace week1
         }
 
         return sum;
+    }
+
+    struct card_t
+    {
+        int id;
+        std::bitset<100> winners;
+        std::bitset<100> my_numbers;
+
+        card_t(const std::string& line)
+        {
+            std::vector<std::string> first = str::split(line, ":");
+            std::vector<std::string> left = str::split(str::trim(first[0]), " ");
+            id = boost::lexical_cast<int>(left[1]);
+
+            std::vector<std::string> panels = str::split(str::trim(first[1]), "|");
+            std::vector<std::string> wtmp = str::split(str::trim(panels[0]), " ");
+            for (auto w: wtmp)
+                winners.set(boost::lexical_cast<int>(str::trim(w)));
+
+            std::vector<std::string> ntmp = str::split(str::trim(panels[1]), " ");
+            for (auto n: ntmp)
+                my_numbers.set(boost::lexical_cast<int>(str::trim(n)));
+        }
+
+        size_t matches() const { return (winners & my_numbers).count(); }
+        size_t score() const { return matches() > 0 ? (1 << (matches() - 1)) : 0;  }
+    };
+
+    long day04a()
+    {
+        std::ifstream infile("../data/day04.dat");
+        std::string line;
+
+        long sum{0};
+        while (std::getline(infile, line))
+        {
+            card_t card(line);
+            sum += card.score();
+        }
+
+        return sum;
+    }
+
+    long day04b()
+    {
+        std::ifstream infile("../data/day04.dat");
+        std::string line;
+        std::vector<card_t> cards;
+
+        while (std::getline(infile, line))
+        {
+            cards.emplace_back(line);
+        }
+        std::vector<long> copies(cards.size(), 0);
+
+        return cards.size();
     }
 };

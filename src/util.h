@@ -120,7 +120,7 @@ struct str
     static inline std::vector<std::string> split(const std::string& s, const std::string& splitters)
     {
         std::vector<std::string> v;
-        boost::split(v, s, boost::is_any_of(splitters));
+        boost::split(v, s, boost::is_any_of(splitters), boost::algorithm::token_compress_on);
         return v;
     }
 
