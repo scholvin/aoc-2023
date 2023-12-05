@@ -3,6 +3,7 @@
 #include <fstream>
 #include <boost/lexical_cast.hpp>
 #include <boost/tokenizer.hpp>
+#include <boost/algorithm/string.hpp>
 
 struct readers
 {
@@ -113,6 +114,14 @@ struct str
     static inline std::string& trim(std::string& s, const char* t = ws)
     {
         return ltrim(rtrim(s, t), t);
+    }
+
+    // split a list of strings by a string of delimiters
+    static inline std::vector<std::string> split(const std::string& s, const std::string& splitters)
+    {
+        std::vector<std::string> v;
+        boost::split(v, s, boost::is_any_of(splitters));
+        return v;
     }
 
 };
