@@ -142,4 +142,93 @@ namespace week1
         }
         return sum;
     }
+
+#define SMOL
+#ifdef SMOL
+    const size_t SZ = 10;
+    const std::string filename{"../data/day03-smol.dat"};
+#else
+    const size_t SZ = 140;
+    const std::string filename{"../data/day03.dat"};
+#endif
+
+    typedef std::array<std::array<char, SZ>, SZ> schematic_t;
+
+    struct char_in_line
+    {
+        char operator()(char c) { return c; }
+    };
+
+    long day03a()
+    {
+        schematic_t schematic;
+        readers::read_dense_2d_matrix(filename, char_in_line(), schematic);
+
+        // is the digit at x,y surrounded at any of the 8 borders by a non-digit / non period
+        auto check_candidate = [&] (schematic_t& s, size_t x, size_t y) -> bool
+        {
+            if (x > 0    && y > 0    && !isdigit(s[x-1][y-1]) && s[x-1][y-1] != '.') return true; // NW
+            if (            y > 0    && !isdigit(s[x][y-1])   && s[x][y-1] != '.') return true; // N
+            if (x < SZ-1 && y > 0    && !isdigit(s[x+1][y-1]) && s[x+1][y-1] != '.') return true; // NE
+            if (x > 0                && !isdigit(s[x-1][y])   && s[x-1][y] != '.') return true; // W
+            if (x < SZ-1             && !isdigit(s[x+1][y])   && s[x+1][y] != '.') return true; // E
+            if (x > 0    && y < SZ-1 && !isdigit(s[x-1][y+1]) && s[x-1][y+1] != '.') return true; // SW
+            if (            y < SZ-1 && !isdigit(s[x][y+1])   && s[x][y+1] != '.') return true; // S
+            if (x < SZ-1 && y < SZ-1 && !isdigit(s[x+1][y+1]) && s[x+1][y+1] != '.') return true; // SE
+            return false;
+        };
+
+        size_t x{0}, y{0};
+        long sum{0};
+
+        while (x < SZ && y < SZ)
+        {
+            if (isdigit(schematic[x][y]))
+            {
+                long n = schematic[x][y] - '0';
+                bool candidate = check_candidate(schematic, x, y);
+                bool ondigit = true;
+                while (ondigit)
+                {
+                    x++;
+                    if (x == SZ)
+                    {
+                        ondigit = false;
+                        x = 0;
+                        y++;
+                    } else {
+                        if (isdigit(schematic[x][y]))
+                        {
+                            n = n * 10 + schematic[x][y] - '0';
+                            if (!candidate)
+                                candidate = check_candidate(schematic, x, y);
+                        } else {
+                            ondigit = false;
+                        }
+                    }
+                }
+                if (candidate)
+                    sum += n;
+            } else {
+                x++;
+                if (x == SZ)
+                {
+                    x = 0;
+                    y++;
+                }
+            }
+        }
+
+        return sum;
+    }
+
+    long day03b()
+    {
+        schematic_t schematic;
+        readers::read_dense_2d_matrix(filename, char_in_line(), schematic);
+
+
+        return -1;
+
+    }
 };
