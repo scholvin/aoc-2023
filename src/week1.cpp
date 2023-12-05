@@ -1,6 +1,8 @@
 #include "week1.h"
 #include "util.h"
 
+#include <set>
+
 namespace week1
 {
     const std::string DIGITS { "0123456789" };
@@ -136,7 +138,7 @@ namespace week1
         return sum;
     }
 
-#define SMOL
+//#define SMOL
 #ifdef SMOL
     const size_t SZ = 10;
     const std::string filename{"../data/day03-smol.dat"};
@@ -220,8 +222,82 @@ namespace week1
         schematic_t schematic;
         readers::read_dense_2d_matrix(filename, char_in_line(), schematic);
 
+        // build an x,y array where each cell points to the number that's in it (indexed
+        // by the numbers vector below)
+        typedef std::array<std::array<int, SZ>, SZ> nummap_t;
+        nummap_t nummap;
+        for (size_t x = 0; x < SZ; x++)
+            for (size_t y = 0; y < SZ; y++)
+                nummap[x][y] = -1;
 
-        return -1;
+        std::vector<long> numbers;
+        size_t x{0}, y{0};
+        while (x < SZ and y < SZ)
+        {
+            if (isdigit(schematic[x][y]))
+            {
+                long n = schematic[x][y] - '0';
+                nummap[x][y] = numbers.size();
+                bool ondigit = true;
+                while (ondigit)
+                {
+                    x++;
+                    if (x == SZ)
+                    {
+                        ondigit = false;
+                        numbers.push_back(n);
+                        x = 0;
+                        y++;
+                    } else {
+                        if (isdigit(schematic[x][y]))
+                        {
+                            n = n * 10 + schematic[x][y] - '0';
+                            nummap[x][y] = numbers.size();
+                        }
+                        else
+                        {
+                            ondigit = false;
+                            numbers.push_back(n);
+                        }
+                    }
+                }
+            } else {
+                x++;
+                if (x == SZ)
+                {
+                    x = 0;
+                    y++;
+                }
+            }
+        }
 
+        long sum{0};
+        // now find each gear, and use the nummap to see what's adjacent
+        for (size_t x = 0; x < SZ; x++)
+        {
+            for (size_t y = 0; y < SZ; y++)
+            {
+                if (schematic[x][y] == '*')
+                {
+                    std::set<int> adj; // numbers that are adjacent
+                    // check all 8 neighbors
+                    if (x > 0    && y > 0    && nummap[x-1][y-1] > -1) adj.insert(nummap[x-1][y-1]) ; // NW
+                    if (            y > 0    && nummap[x][y-1] > -1)   adj.insert(nummap[x][y-1]); // N
+                    if (x < SZ-1 && y > 0    && nummap[x+1][y-1] > -1) adj.insert(nummap[x+1][y-1]); // NE
+                    if (x > 0                && nummap[x-1][y] > -1)   adj.insert(nummap[x-1][y]); // W
+                    if (x < SZ-1             && nummap[x+1][y] > -1)   adj.insert(nummap[x+1][y]); // E
+                    if (x > 0    && y < SZ-1 && nummap[x-1][y+1] > -1) adj.insert(nummap[x-1][y+1]); // SW
+                    if (            y < SZ-1 && nummap[x][y+1] > -1)   adj.insert(nummap[x][y+1]); // S
+                    if (x < SZ-1 && y < SZ-1 && nummap[x+1][y+1] > -1) adj.insert(nummap[x+1][y+1]); // SE
+                    if (adj.size() == 2)
+                    {
+                        long product = numbers[*(adj.begin())] * numbers[*(adj.rbegin())];
+                        sum += product;
+                    }
+                }
+            }
+        }
+
+        return sum;
     }
 };
