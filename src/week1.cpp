@@ -376,4 +376,148 @@ namespace week1
         return result + cards.size();
     }
 
+    struct day5inner_t
+    {
+        long src;
+        long dst;
+        long len;
+
+        day5inner_t(const std::string& line)
+        {
+            std::vector<std::string> parts = str::split(line, " ");
+            dst = boost::lexical_cast<long>(parts[0]);
+            src = boost::lexical_cast<long>(parts[1]);
+            len = boost::lexical_cast<long>(parts[2]);
+        }
+    };
+
+    struct day5map_t
+    {
+        bool sorted;
+        std::vector<day5inner_t> ranges;
+
+        day5map_t() : sorted(false) { };
+
+        void add_range(const std::string& line)
+        {
+            ranges.push_back(day5inner_t(line));
+        }
+
+        long map(long in)
+        {
+            if (!sorted)
+            {
+                // sort it...?
+                std::sort(ranges.begin(), ranges.end(), [](day5inner_t left, day5inner_t right) {
+                    return left.src < right.src;
+                });
+                sorted = true;
+            }
+            for (auto r: ranges)
+            {
+                if (in >= r.src && in <= r.src + r.len)
+                    return in + - r.src + r.dst;
+            }
+            return in;
+        }
+    };
+
+    long day05a()
+    {
+        std::ifstream infile("../data/day05.dat");
+        std::string line;
+
+        // first line is seeds
+        std::vector<long> seeds;
+        std::getline(infile, line);
+        std::vector<std::string> parts = str::split(line, ":");
+        parts = str::split(str::trim(parts[1]), " ");
+        for (auto p: parts)
+            seeds.push_back(boost::lexical_cast<long>(p));
+
+        // blank, then seed-to-soil-map
+        std::getline(infile, line);
+        std::getline(infile, line);
+
+        day5map_t seed2soil;
+        while (std::getline(infile, line))
+        {
+            if (line.size() == 0)
+                break;
+            seed2soil.add_range(line);
+        }
+
+        day5map_t soil2fert;
+        std::getline(infile, line); // throw away header
+        while (std::getline(infile, line))
+        {
+            if (line.size() == 0)
+                break;
+            soil2fert.add_range(line);
+        }
+
+        day5map_t fert2water;
+        std::getline(infile, line); // throw away header
+        while (std::getline(infile, line))
+        {
+            if (line.size() == 0)
+                break;
+            fert2water.add_range(line);
+        }
+
+        day5map_t water2light;
+        std::getline(infile, line); // throw away header
+        while (std::getline(infile, line))
+        {
+            if (line.size() == 0)
+                break;
+            water2light.add_range(line);
+        }
+
+        day5map_t light2temp;
+        std::getline(infile, line); // throw away header
+        while (std::getline(infile, line))
+        {
+            if (line.size() == 0)
+                break;
+            light2temp.add_range(line);
+        }
+
+        day5map_t temp2hum;
+        std::getline(infile, line); // throw away header
+        while (std::getline(infile, line))
+        {
+            if (line.size() == 0)
+                break;
+            temp2hum.add_range(line);
+        }
+
+        day5map_t hum2loc;
+        std::getline(infile, line); // throw away header
+        while (std::getline(infile, line))
+        {
+            if (line.size() == 0)
+                break;
+            hum2loc.add_range(line);
+        }
+
+        long minloc = std::numeric_limits<long>::max();
+        for (auto s: seeds)
+        {
+            long t = seed2soil.map(s);
+            t = soil2fert.map(t);
+            t = fert2water.map(t);
+            t = water2light.map(t);
+            t = light2temp.map(t);
+            t = temp2hum.map(t);
+            t = hum2loc.map(t);
+            minloc = std::min(minloc, t);
+        }
+
+        return minloc;
+    }
+    long day05b()
+    {
+        return -1;
+    }
 };
