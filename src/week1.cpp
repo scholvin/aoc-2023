@@ -413,16 +413,17 @@ namespace week1
                 });
                 sorted = true;
             }
+
             for (auto r: ranges)
             {
-                if (in >= r.src && in <= r.src + r.len)
+                if (in >= r.src && in < r.src + r.len)
                     return in + - r.src + r.dst;
             }
             return in;
         }
     };
 
-    long day05a()
+    long day05(char part)
     {
         std::ifstream infile("../data/day05.dat");
         std::string line;
@@ -501,23 +502,43 @@ namespace week1
             hum2loc.add_range(line);
         }
 
-        long minloc = std::numeric_limits<long>::max();
-        for (auto s: seeds)
+        auto grow = [&](long seed) -> long
         {
-            long t = seed2soil.map(s);
+            long t = seed2soil.map(seed);
             t = soil2fert.map(t);
             t = fert2water.map(t);
             t = water2light.map(t);
             t = light2temp.map(t);
             t = temp2hum.map(t);
             t = hum2loc.map(t);
-            minloc = std::min(minloc, t);
+            return t;
+        };
+
+        long minloc = std::numeric_limits<long>::max();
+
+        if (part == 'a')
+        {
+            for (auto s: seeds)
+            {
+                minloc = std::min(minloc, grow(s));
+            }
+        }
+        else
+        {
+            // seeds line is actually ranges - brute force - 20283860
+            long ctr = 0;
+            for (size_t i = 0; i < seeds.size(); i += 2)
+            {
+                for (long j = 0; j < seeds[i+1]; j++)
+                {
+                    minloc = std::min(minloc, grow(seeds[i]+j));
+                    ctr++;
+                    if (ctr % 1000000 == 0) std::cout << ctr << std::endl;
+                }
+            }
         }
 
         return minloc;
     }
-    long day05b()
-    {
-        return -1;
-    }
+
 };
