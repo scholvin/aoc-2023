@@ -555,12 +555,12 @@ namespace week1
         long distance;
     };
 
-    const std::vector<day6_t> DAY6 = { {44,208}, {80,1581}, {65,1050}, {72,1102} };
-    const std::vector<day6_t> DAY6_smol = { {7,9}, {15,40}, {30,200} };
-
     long day06a()
     {
+        const std::vector<day6_t> DAY6 = { {44,208}, {80,1581}, {65,1050}, {72,1102} };
+        const std::vector<day6_t> DAY6_smol = { {7,9}, {15,40}, {30,200} };
         long product{1};
+
         for (auto day: DAY6)
         {
             long records{0};
@@ -574,9 +574,37 @@ namespace week1
         }
         return product;
     }
+
     long day06b()
     {
-        return -1;
+        const day6_t DAY6_big { 44806572, 208158110501102 };
+        const day6_t DAY6_smol { 71530, 940200 }; (void)DAY6_smol; // keep compiler quiet
+
+        const day6_t& DAY6 = DAY6_big;
+
+        long min {0}, max {0};
+
+        for (long rate = 1; rate < DAY6.time; rate++)
+        {
+            long d = rate * (DAY6.time - rate);
+            if (d > DAY6.distance)
+            {
+                min = rate;
+                break;
+            }
+        }
+
+        for (long rate = DAY6.time; rate > 1; rate--)
+        {
+            long d = rate * (DAY6.time - rate);
+            if (d > DAY6.distance)
+            {
+                max = rate;
+                break;
+            }
+        }
+
+        return max - min + 1;
     }
 
 };
