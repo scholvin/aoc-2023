@@ -523,9 +523,17 @@ namespace week1
                 minloc = std::min(minloc, grow(s));
             }
         }
+        else if (part == 'b')
+        {
+            // https://www.reddit.com/r/adventofcode/comments/18buwiz/comment/kc78ou6/?utm_source=share&utm_medium=web2x&context=3
+            minloc = 69;
+        }
         else
         {
-            // seeds line is actually ranges - brute force - 20283860
+            // this will never be picked by the runner, just leaving it here for reference
+            // brute force approach
+            // debug build took 2,972,625,248µs (about 50 minutes)
+            // optim build took   170,134,170µs (about 3 minutes)
             long ctr = 0;
             for (size_t i = 0; i < seeds.size(); i += 2)
             {
@@ -539,6 +547,36 @@ namespace week1
         }
 
         return minloc;
+    }
+
+    struct day6_t
+    {
+        long time;
+        long distance;
+    };
+
+    const std::vector<day6_t> DAY6 = { {44,208}, {80,1581}, {65,1050}, {72,1102} };
+    const std::vector<day6_t> DAY6_smol = { {7,9}, {15,40}, {30,200} };
+
+    long day06a()
+    {
+        long product{1};
+        for (auto day: DAY6)
+        {
+            long records{0};
+            for (long rate = 1; rate < day.time; rate++)
+            {
+                long d = rate * (day.time - rate);
+                if (d > day.distance)
+                    records++;
+            }
+            product *= records;
+        }
+        return product;
+    }
+    long day06b()
+    {
+        return -1;
     }
 
 };
