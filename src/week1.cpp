@@ -3,6 +3,7 @@
 
 #include <set>
 #include <bitset>
+#include <iostream>
 
 namespace week1
 {
@@ -355,6 +356,24 @@ namespace week1
         }
         std::vector<long> copies(cards.size(), 0);
 
-        return cards.size();
+        for (size_t i = 0; i < cards.size(); i++)
+        {
+            size_t matches = cards[i].matches();
+            size_t instances = 1 + copies[i];
+
+            for (size_t j = 1; j <= matches; j++)
+            {
+                if (i + j >= cards.size())
+                    continue;
+                copies[i+j] += instances;
+            }
+        }
+
+        long result{0};
+        for (auto c: copies)
+            result += c;
+
+        return result + cards.size();
     }
+
 };
