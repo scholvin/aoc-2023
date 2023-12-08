@@ -423,6 +423,47 @@ namespace week1
         }
     };
 
+    day5map_t seed2soil;
+    day5map_t soil2fert;
+    day5map_t fert2water;
+    day5map_t water2light;
+    day5map_t light2temp;
+    day5map_t temp2hum;
+    day5map_t hum2loc;
+
+    long grow(long seed)
+    {
+        long t = seed2soil.map(seed);
+        t = soil2fert.map(t);
+        t = fert2water.map(t);
+        t = water2light.map(t);
+        t = light2temp.map(t);
+        t = temp2hum.map(t);
+        t = hum2loc.map(t);
+        return t;
+    }
+
+    // recursive solution for part b, stolen from
+    // https://www.reddit.com/r/adventofcode/comments/18buwiz/comment/kc78ou6/
+    long find_min(long start, long len)
+    {
+        if (len == 1)
+            return std::min(grow(start), grow(start+1));
+
+        long step = len / 2;
+        long middle = start + step;
+        long start_val = grow(start);
+        long middle_val = grow(middle);
+        long end_val = grow(start + len);
+        long found_min = std::numeric_limits<long>::max();
+
+        if (start_val + step != middle_val)
+            found_min = std::min(found_min, find_min(start, step));
+        if (middle + (len - step) != end_val)
+            found_min = std::min(found_min, find_min(middle, len - step));
+        return found_min;
+    }
+
     long day05(char part)
     {
         std::ifstream infile("../data/day05.dat");
@@ -440,15 +481,12 @@ namespace week1
         std::getline(infile, line);
         std::getline(infile, line);
 
-        day5map_t seed2soil;
         while (std::getline(infile, line))
         {
             if (line.size() == 0)
                 break;
             seed2soil.add_range(line);
         }
-
-        day5map_t soil2fert;
         std::getline(infile, line); // throw away header
         while (std::getline(infile, line))
         {
@@ -456,8 +494,6 @@ namespace week1
                 break;
             soil2fert.add_range(line);
         }
-
-        day5map_t fert2water;
         std::getline(infile, line); // throw away header
         while (std::getline(infile, line))
         {
@@ -465,8 +501,6 @@ namespace week1
                 break;
             fert2water.add_range(line);
         }
-
-        day5map_t water2light;
         std::getline(infile, line); // throw away header
         while (std::getline(infile, line))
         {
@@ -474,8 +508,6 @@ namespace week1
                 break;
             water2light.add_range(line);
         }
-
-        day5map_t light2temp;
         std::getline(infile, line); // throw away header
         while (std::getline(infile, line))
         {
@@ -483,8 +515,6 @@ namespace week1
                 break;
             light2temp.add_range(line);
         }
-
-        day5map_t temp2hum;
         std::getline(infile, line); // throw away header
         while (std::getline(infile, line))
         {
@@ -492,8 +522,6 @@ namespace week1
                 break;
             temp2hum.add_range(line);
         }
-
-        day5map_t hum2loc;
         std::getline(infile, line); // throw away header
         while (std::getline(infile, line))
         {
@@ -501,18 +529,6 @@ namespace week1
                 break;
             hum2loc.add_range(line);
         }
-
-        auto grow = [&](long seed) -> long
-        {
-            long t = seed2soil.map(seed);
-            t = soil2fert.map(t);
-            t = fert2water.map(t);
-            t = water2light.map(t);
-            t = light2temp.map(t);
-            t = temp2hum.map(t);
-            t = hum2loc.map(t);
-            return t;
-        };
 
         long minloc = std::numeric_limits<long>::max();
 
@@ -525,8 +541,10 @@ namespace week1
         }
         else if (part == 'b')
         {
-            // https://www.reddit.com/r/adventofcode/comments/18buwiz/comment/kc78ou6/?utm_source=share&utm_medium=web2x&context=3
-            minloc = 69;
+            for (size_t i = 0; i < seeds.size(); i += 2)
+            {
+                minloc = std::min(minloc, find_min(seeds[i], seeds[i+1]));
+            }
         }
         else
         {
