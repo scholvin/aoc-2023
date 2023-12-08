@@ -1,6 +1,10 @@
 #include "week2.h"
 #include "util.h"
 
+#include <unordered_set>
+#include <iostream>
+#include <numeric>
+
 namespace week2
 {
     struct day8_t
@@ -19,7 +23,7 @@ namespace week2
         }
     };
 
-    long day08a()
+    long day08(char part)
     {
         std::ifstream infile("../data/day08.dat");
         std::string line;
@@ -32,33 +36,63 @@ namespace week2
         std::unordered_map<std::string, std::string> left;
         std::unordered_map<std::string, std::string> right;
 
+        std::vector<std::string> part_b_starters; // starting points
+
         while (std::getline(infile, line))
         {
-            left[line.substr(0, 3)] = line.substr(7, 3);
-            right[line.substr(0, 3)] = line.substr(12, 3);
+            std::string dest = line.substr(0, 3);
+            left[dest] = line.substr(7, 3);
+            right[dest] = line.substr(12, 3);
+            if (dest[2] == 'A')
+                part_b_starters.push_back(dest);
         }
 
-        std::string here = "AAA";
-        long steps = 0;
-        while (here != "ZZZ")
+        if (part == 'a')
         {
-            for (auto i: instructions)
+            std::string here = "AAA";
+            long steps = 0;
+            while (here != "ZZZ")
             {
-                if (i == 'L')
-                    here = left[here];
-                else if (i == 'R')
-                    here = right[here];
-                steps++;
-                if (here == "ZZZ")
-                    break;
+                for (auto i: instructions)
+                {
+                    if (i == 'L')
+                        here = left[here];
+                    else if (i == 'R')
+                        here = right[here];
+                    steps++;
+                    if (here == "ZZZ")
+                        break;
+                }
             }
+            return steps;
         }
-        return steps;
-
+        else
+        {
+            std::vector<long> results;
+            for (auto here: part_b_starters)
+            {
+                long steps = 0;
+                while (here[2] != 'Z')
+                {
+                    for (auto i: instructions)
+                    {
+                        if (i == 'L')
+                            here = left[here];
+                        else if (i == 'R')
+                            here = right[here];
+                        steps++;
+                        if (here[2] == 'Z')
+                            break;
+                    }
+                }
+                results.push_back(steps);
+            }
+            long result = 1;
+            for (size_t i = 0; i < results.size(); i++)
+                result = std::lcm(result, results[i]);
+            return result;
+        }
     }
 
-    long day08b()
-    {
-        return -1;
-    }
+
 };
