@@ -607,4 +607,118 @@ namespace week1
         return max - min + 1;
     }
 
+    class day7_t
+    {
+    public:
+        typedef enum { high_card, one_pair, two_pair, trips, house, four, five } type_t;
+
+        day7_t(const std::string& line)
+        {
+            std::vector<std::string> parts = str::split(line, " ");
+            _hand = parts[0];
+            _bid = boost::lexical_cast<long>(parts[1]);
+
+            // calculate type of hand...start with a count of each card
+            std::unordered_map<char, size_t> hmap;
+            for (auto c: std::string("AKQJT98765432"))
+            {
+                hmap[c] = 0;
+            }
+            for (auto c: _hand)
+            {
+                hmap[c]++;
+            }
+            // create vector of counts
+            std::vector<size_t> counts(5, 0);
+            size_t idx = 0;
+            for (auto c: std::string("AKQJT98765432"))
+            {
+                if (hmap[c] > 0)
+                    counts[idx++] = hmap[c];
+            }
+            std::sort(counts.begin(), counts.end(), std::greater<size_t>());
+
+            if (counts[0] == 5)
+                _type = five;
+            else if (counts[0] == 4)
+                _type = four;
+            else if (counts[0] == 3 && counts[1] == 2)
+                _type = house;
+            else if (counts[0] == 3 && counts[1] != 2)
+                _type = trips;
+            else if (counts[0] == 2 && counts[1] == 2)
+                _type = two_pair;
+            else if (counts[0] == 2 && counts[1] != 2)
+                _type = one_pair;
+            else _type = high_card;
+        }
+
+        bool operator < (const day7_t& other) const
+        {
+            if (_type < other._type)
+                return true;
+            else if (_type > other._type)
+                return false;
+            else
+            {
+                // deal with chars being in a weird order
+                std::string left = _hand;
+                std::replace(left.begin(), left.end(), 'A', 'z');
+                std::replace(left.begin(), left.end(), 'K', 'y');
+                std::replace(left.begin(), left.end(), 'Q', 'x');
+                std::replace(left.begin(), left.end(), 'J', 'w');
+                std::replace(left.begin(), left.end(), 'T', 'v');
+                std::string right = other._hand;
+                std::replace(right.begin(), right.end(), 'A', 'z');
+                std::replace(right.begin(), right.end(), 'K', 'y');
+                std::replace(right.begin(), right.end(), 'Q', 'x');
+                std::replace(right.begin(), right.end(), 'J', 'w');
+                std::replace(right.begin(), right.end(), 'T', 'v');
+                for (size_t c = 0; c < 5; c++)
+                {
+                    if (left[c] < right[c])
+                        return true;
+                    else if (left[c] > right[c])
+                        return false;
+                }
+            }
+            return false; // I guess all 5 cards are equal?
+        }
+
+        std::string dump() const
+        {
+            return _hand + " " + boost::lexical_cast<std::string>(_bid);
+        }
+
+        long bid() const { return _bid; }
+
+    private:
+        std::string _hand;
+        long _bid;
+        type_t _type;
+    };
+
+    long day07a()
+    {
+        std::ifstream infile("../data/day07.dat");
+        std::string line;
+        std::vector<day7_t> hands;
+        while (std::getline(infile, line))
+        {
+            hands.emplace_back(line);
+        }
+        std::sort(hands.begin(), hands.end());
+        long sum{0}, rank{1};
+        for (auto h: hands)
+        {
+            // std::cout << h.dump() << std::endl;
+            sum += rank++ * h.bid();
+        }
+        return sum;
+    }
+    long day07b()
+    {
+        return -1;
+    }
+
 };
