@@ -125,5 +125,3 @@ struct str
     }
 
 };
-    
-const char* str::ws = " \t\n\r\f\v";

@@ -1,5 +1,6 @@
 build
 bfast
+clang
 .DS_Store
 ._.DS_Store
 data/*-big.dat
