@@ -393,10 +393,7 @@ namespace week1
 
     struct day5map_t
     {
-        bool sorted;
         std::vector<day5inner_t> ranges;
-
-        day5map_t() : sorted(false) { };
 
         void add_range(const std::string& line)
         {
@@ -405,15 +402,6 @@ namespace week1
 
         long map(long in)
         {
-            if (!sorted)
-            {
-                // sort it...?
-                std::sort(ranges.begin(), ranges.end(), [](day5inner_t left, day5inner_t right) {
-                    return left.src < right.src;
-                });
-                sorted = true;
-            }
-
             for (auto r: ranges)
             {
                 if (in >= r.src && in < r.src + r.len)
