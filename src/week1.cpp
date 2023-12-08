@@ -612,7 +612,7 @@ namespace week1
     public:
         typedef enum { high_card, one_pair, two_pair, trips, house, four, five } type_t;
 
-        day7_t(const std::string& line)
+        day7_t(const std::string& line, bool wildcard) : _wildcard(wildcard)
         {
             std::vector<std::string> parts = str::split(line, " ");
             _hand = parts[0];
@@ -651,6 +651,33 @@ namespace week1
             else if (counts[0] == 2 && counts[1] != 2)
                 _type = one_pair;
             else _type = high_card;
+
+            if (wildcard && hmap['J'] > 0)
+            {
+                const size_t& jokers = hmap['J'];
+                // how can we improve things with jokers?
+                if (_type == five)
+                    ; // can't improve!
+                else if (_type == four)
+                    _type = five; // whether we have 1 or 4 jokers we're a five now
+                else if (_type == house)
+                    _type = five; // whether we have 2 or 3 jokers, we're a five now
+                else if (_type == trips && jokers == 1)
+                    _type = four;
+                // if we had 2 jokers we'd have been a house
+                else if (_type == trips && jokers == 3)
+                    _type = four;
+                else if (_type == two_pair && jokers == 1)
+                    _type = house;
+                else if (_type == two_pair && jokers == 2)
+                    _type = four;
+                else if (_type == one_pair && jokers == 1)
+                    _type = trips;
+                else if (_type == one_pair && jokers == 2)
+                    _type = trips;
+                else if (_type == high_card)
+                    _type = one_pair;
+            }
         }
 
         bool operator < (const day7_t& other) const
@@ -666,13 +693,13 @@ namespace week1
                 std::replace(left.begin(), left.end(), 'A', 'z');
                 std::replace(left.begin(), left.end(), 'K', 'y');
                 std::replace(left.begin(), left.end(), 'Q', 'x');
-                std::replace(left.begin(), left.end(), 'J', 'w');
+                std::replace(left.begin(), left.end(), 'J', _wildcard ? '0' : 'w');
                 std::replace(left.begin(), left.end(), 'T', 'v');
                 std::string right = other._hand;
                 std::replace(right.begin(), right.end(), 'A', 'z');
                 std::replace(right.begin(), right.end(), 'K', 'y');
                 std::replace(right.begin(), right.end(), 'Q', 'x');
-                std::replace(right.begin(), right.end(), 'J', 'w');
+                std::replace(right.begin(), right.end(), 'J', _wildcard ? '0' : 'w');
                 std::replace(right.begin(), right.end(), 'T', 'v');
                 for (size_t c = 0; c < 5; c++)
                 {
@@ -682,30 +709,42 @@ namespace week1
                         return false;
                 }
             }
-            return false; // I guess all 5 cards are equal?
+            return false; // all 5 cards are equal, I think
         }
 
         std::string dump() const
         {
-            return _hand + " " + boost::lexical_cast<std::string>(_bid);
+            std::string r = _hand + " ";
+            switch (_type) {
+                case five: r += "five"; break;
+                case four: r += "four"; break;
+                case house: r+= "house"; break;
+                case trips: r+= "trips"; break;
+                case two_pair: r += "two_pair"; break;
+                case one_pair: r += "one_pair"; break;
+                case high_card: r += "high_card"; break;
+                default: r += "bug"; break;
+            }
+            return r;
         }
 
         long bid() const { return _bid; }
 
     private:
+        bool _wildcard;
         std::string _hand;
         long _bid;
         type_t _type;
     };
 
-    long day07a()
+    long day07(char part)
     {
         std::ifstream infile("../data/day07.dat");
         std::string line;
         std::vector<day7_t> hands;
         while (std::getline(infile, line))
         {
-            hands.emplace_back(line);
+            hands.emplace_back(line, part == 'b');
         }
         std::sort(hands.begin(), hands.end());
         long sum{0}, rank{1};
@@ -716,9 +755,4 @@ namespace week1
         }
         return sum;
     }
-    long day07b()
-    {
-        return -1;
-    }
-
 };
