@@ -54,10 +54,10 @@ struct readers
     template <typename T>
     struct lexi_caster
     {
-        int operator()(const std::string& str) { return boost::lexical_cast<T>(str); }
+        T operator()(const std::string& str) { return boost::lexical_cast<T>(str); }
     };
 
-    // this is to read a file that is a single line of PODs, delimited by commas or spaces, into a container of type T
+    // this is to read a file that is a single line of PODs, delimited by spaces, into a container of type T
     template <typename T>
     static void read_delimited_line(const std::string& filename, T& result)
     {
@@ -65,8 +65,25 @@ struct readers
         std::string line;
         std::getline(infile, line);
 
-        boost::tokenizer<> tokens(line);
+        boost::char_separator<char> sep(" ");
+        boost::tokenizer<boost::char_separator<char>> tokens(line, sep);
         std::transform(tokens.begin(), tokens.end(), std::back_inserter(result), lexi_caster<typename T::value_type>());
+    }
+
+    // this is to read a file that is many lines of PODs, delimited by spaces, into a container of type T
+    template <typename T>
+    static void read_delimited_lines(const std::string& filename, T& result)
+    {
+        std::ifstream infile(filename);
+        std::string line;
+        while (std::getline(infile, line))
+        {
+            boost::char_separator<char> sep(" ");
+            boost::tokenizer<boost::char_separator<char>> tokens(line, sep);
+            typename T::value_type next;
+            std::transform(tokens.begin(), tokens.end(), std::back_inserter(next), lexi_caster<typename T::value_type::value_type>());
+            result.push_back(next);
+        }
     }
 
     struct digit_parser

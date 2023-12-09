@@ -94,5 +94,59 @@ namespace week2
         }
     }
 
+    long day09(char part)
+    {
+        typedef std::deque<long> seq_t;
+        typedef std::deque<seq_t> seqseq_t;
+        seqseq_t sequences;
+        readers::read_delimited_lines("../data/day09.dat", sequences);
+        long sum{0};
 
+        auto all_zeroes = [](const seq_t& seq) -> bool
+        {
+            for (auto s: seq)
+                if (s)
+                    return false;
+            return true;
+        };
+
+
+        for (auto seq: sequences)
+        {
+            // build the data structure
+            seqseq_t work;
+            work.push_back(seq);
+            bool done = false;
+            while (!done)
+            {
+                seq_t& cur = work.back();
+                seq_t next;
+                for (auto it = cur.begin(); it != cur.end() - 1; it++)
+                    next.push_back(*(it+1) - *it);
+                if (all_zeroes(next))
+                    done = true;
+                work.push_back(next);
+            }
+
+            // solve
+            if (part == 'a')
+            {
+                work.back().push_back(0);
+                for (auto it = work.rbegin() + 1; it != work.rend(); it++)
+                    it->push_back((*(it-1)).back() + (*it).back());
+
+                sum += work.front().back();
+            }
+            else
+            {
+                work.back().push_front(0);
+                for (auto it = work.rbegin() + 1; it != work.rend(); it++)
+                    it->push_front((*it).front() - (*(it-1)).front());
+
+                sum += work.front().front();
+            }
+        }
+
+        return sum;
+    }
 };
