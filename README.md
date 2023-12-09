@@ -6,10 +6,10 @@ I'm not really making any effort for this code to be crazy efficient. I lean hea
 STL, and am focusing more on code clarity and correctness than being super cute with language
 features. I'm Just trying to get the answers right and get my stars.
 
-I'm testing this with gcc 8.5 and cmake 3.20.
+I'm testing this with gcc 13 and cmake 3.20.
 
 * It'll probably work with a lot of other compilers. 
-* I set the experimental C++20 flag, but it's unlikely I'll use any of those features.
+* I'm using the C++20 flag, but it's unlikely I'll use any of those features.
 
 ## To build:
 ```
