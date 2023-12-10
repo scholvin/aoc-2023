@@ -149,4 +149,81 @@ namespace week2
 
         return sum;
     }
+
+    const size_t MAZE_SZ = 140;
+    typedef std::array<std::array<char, MAZE_SZ>, MAZE_SZ> maze_t;
+
+    struct char_in_line
+    {
+        char operator()(char c) { return c; }
+    };
+
+    struct coord_t
+    {
+        size_t x, y;
+    };
+
+    bool operator == (const coord_t& left, const coord_t& right)
+    {
+        return left.x == right.x && left.y == right.y;
+    }
+
+    // find the first outbound flow from coord and return it - for starting pos
+    coord_t find_out_flow(const maze_t& maze, const coord_t& s)
+    {
+        if (s.x < MAZE_SZ - 1 && (maze[s.x+1][s.y] == '-' || maze[s.x+1][s.y] == 'J' || maze[s.x+1][s.y] == '7')) // east
+            return {s.x+1, s.y};
+        else if (s.x > 0 && (maze[s.x-1][s.y] == '-' || maze[s.x-1][s.y] == 'L' || maze[s.x-1][s.y] == 'F')) // west
+            return {s.x-1, s.y};
+        else if (s.y < MAZE_SZ - 1 && (maze[s.x][s.y+1] == '|' || maze[s.x][s.y+1] == '7' || maze[s.x][s.y+1] == 'F')) // north
+            return {s.x, s.y+1};
+        else if (s.y > 0 && (maze[s.x][s.y-1] == '|' || maze[s.x][s.y-1] == 'L' || maze[s.x][s.y-1] == 'J')) // south
+            return {s.x, s.y-1};
+        throw std::logic_error("bug in find_out_flow");
+    }
+
+    // find the next flow from curr (having come from prev)
+    coord_t find_next(const maze_t& maze, const coord_t& prev, const coord_t& curr)
+    {
+        coord_t result = curr;
+        switch (maze[curr.x][curr.y])
+        {
+            case '-': if (prev.x < curr.x) result.x++; else result.x--; break;
+            case '|': if (prev.y < curr.y) result.y++; else result.y--; break;
+            case 'J': if (prev.x < curr.x) result.y--; else result.x--; break;
+            case 'F': if (prev.y > curr.y) result.x++; else result.y++; break;
+            case '7': if (prev.y > curr.y) result.x--; else result.y++; break;
+            case 'L': if (prev.y < curr.y) result.x++; else result.y--; break;
+        }
+        return result;
+    }
+
+    long day10a()
+    {
+        const std::string filename{"../data/day10.dat"};
+        maze_t maze;
+        readers::read_dense_2d_matrix(filename, char_in_line(), maze);
+
+        coord_t start;
+        for (size_t x = 0; x < MAZE_SZ; x++)
+            for (size_t y = 0; y < MAZE_SZ; y++)
+                if (maze[x][y] == 'S')
+                {
+                    start = {x, y};
+                    goto found;
+                }
+found:
+        long count = 1;
+        coord_t curr = find_out_flow(maze, start);
+        coord_t prev = start;
+        while (curr != start)
+        {
+            coord_t next = find_next(maze, prev, curr);
+            prev = curr;
+            curr = next;
+            count++;
+        }
+
+        return count / 2;
+    }
 };
