@@ -150,8 +150,18 @@ namespace week2
         return sum;
     }
 
-    const size_t MAZE_SZ = 140;
-    typedef std::array<std::array<char, MAZE_SZ>, MAZE_SZ> maze_t;
+//#define SMOL
+#ifdef SMOL
+    const size_t MAZE_SZ_X = 20;
+    const size_t MAZE_SZ_Y = 10;
+    const std::string day10file("../data/day10-smol2.dat");
+#else
+    const size_t MAZE_SZ_X = 140;
+    const size_t MAZE_SZ_Y = 140;
+    const std::string day10file("../data/day10.dat");
+#endif
+
+    typedef std::array<std::array<char, MAZE_SZ_Y>, MAZE_SZ_X> maze_t;
 
     struct char_in_line
     {
@@ -161,25 +171,53 @@ namespace week2
     struct coord_t
     {
         size_t x, y;
+
+        bool operator == (const coord_t&) const = default;
     };
 
-    bool operator == (const coord_t& left, const coord_t& right)
+    // find the outbound flows from coord and return them - for starting pos
+    std::vector<coord_t> find_out_flows(const maze_t& maze, const coord_t& s)
     {
-        return left.x == right.x && left.y == right.y;
+        std::vector<coord_t> result;
+        if (s.x < MAZE_SZ_X - 1 && (maze[s.x+1][s.y] == '-' || maze[s.x+1][s.y] == 'J' || maze[s.x+1][s.y] == '7')) // east
+            result.push_back({s.x+1, s.y});
+        if (s.x > 0 && (maze[s.x-1][s.y] == '-' || maze[s.x-1][s.y] == 'L' || maze[s.x-1][s.y] == 'F')) // west
+            result.push_back({s.x-1, s.y});
+        if (s.y > 0 && (maze[s.x][s.y-1] == '|' || maze[s.x][s.y-1] == '7' || maze[s.x][s.y-1] == 'F')) // north
+            result.push_back({s.x, s.y-1});
+        if (s.y < MAZE_SZ_Y - 1 && (maze[s.x][s.y+1] == '|' || maze[s.x][s.y+1] == 'L' || maze[s.x][s.y+1] == 'J')) // south
+            result.push_back({s.x, s.y+1});
+        if (result.size() != 2)
+            throw std::logic_error("bug in find_out_flows");
+        return result;
     }
 
-    // find the first outbound flow from coord and return it - for starting pos
-    coord_t find_out_flow(const maze_t& maze, const coord_t& s)
+    // figure out what kind of shape S really is for part b
+    char find_start_shape(const maze_t& maze, const coord_t& s)
     {
-        if (s.x < MAZE_SZ - 1 && (maze[s.x+1][s.y] == '-' || maze[s.x+1][s.y] == 'J' || maze[s.x+1][s.y] == '7')) // east
-            return {s.x+1, s.y};
-        else if (s.x > 0 && (maze[s.x-1][s.y] == '-' || maze[s.x-1][s.y] == 'L' || maze[s.x-1][s.y] == 'F')) // west
-            return {s.x-1, s.y};
-        else if (s.y < MAZE_SZ - 1 && (maze[s.x][s.y+1] == '|' || maze[s.x][s.y+1] == '7' || maze[s.x][s.y+1] == 'F')) // north
-            return {s.x, s.y+1};
-        else if (s.y > 0 && (maze[s.x][s.y-1] == '|' || maze[s.x][s.y-1] == 'L' || maze[s.x][s.y-1] == 'J')) // south
-            return {s.x, s.y-1};
-        throw std::logic_error("bug in find_out_flow");
+        std::vector<coord_t> turns = find_out_flows(maze, s);
+        bool north{false}, south{false}, east{false}, west{false};
+        if (turns[0].x < s.x || turns[1].x < s.x)
+            west = true;
+        if (turns[0].x > s.x || turns[1].x > s.x)
+            east = true;
+        if (turns[0].y < s.y || turns[1].y < s.y)
+            north = true;
+        if (turns[0].y > s.y || turns[1].y > s.y)
+            south = true;
+        if (north && west)
+            return 'J';
+        else if (north && east)
+            return 'L';
+        else if (south && west)
+            return '7';
+        else if (south && east)
+            return 'F';
+        else if (north && south)
+            return '|';
+        else if (east && west)
+            return '-';
+        throw std::logic_error("bug in find_start_shape");
     }
 
     // find the next flow from curr (having come from prev)
@@ -198,32 +236,100 @@ namespace week2
         return result;
     }
 
-    long day10a()
+    void print(const maze_t maze)
     {
-        const std::string filename{"../data/day10.dat"};
-        maze_t maze;
-        readers::read_dense_2d_matrix(filename, char_in_line(), maze);
+        for (size_t y = 0; y < MAZE_SZ_Y; y++)
+        {
+            for (size_t x = 0; x < MAZE_SZ_X; x++)
+            {
+                std::cout << maze[x][y];
+            }
+            std::cout << std::endl;
+        }
+        std::cout << std::endl;
+    }
+
+    long day10(char part)
+    {
+        maze_t maze_a, maze_b;
+        readers::read_dense_2d_matrix(day10file, char_in_line(), maze_a);
 
         coord_t start;
-        for (size_t x = 0; x < MAZE_SZ; x++)
-            for (size_t y = 0; y < MAZE_SZ; y++)
-                if (maze[x][y] == 'S')
+        for (size_t x = 0; x < MAZE_SZ_X; x++)
+        {
+            for (size_t y = 0; y < MAZE_SZ_Y; y++)
+            {
+                if (maze_a[x][y] == 'S')
                 {
                     start = {x, y};
-                    goto found;
                 }
-found:
+                maze_b[x][y] = '.';
+            }
+        }
+
+        maze_b[start.x][start.y] = '#';
+
         long count = 1;
-        coord_t curr = find_out_flow(maze, start);
+        coord_t curr = find_out_flows(maze_a, start)[0];
+        maze_b[curr.x][curr.y] = '#';
         coord_t prev = start;
         while (curr != start)
         {
-            coord_t next = find_next(maze, prev, curr);
+            coord_t next = find_next(maze_a, prev, curr);
             prev = curr;
             curr = next;
+            maze_b[curr.x][curr.y] = '#';
             count++;
         }
 
-        return count / 2;
+        if (part == 'a')
+        {
+            return count / 2;
+        }
+        else
+        {
+            // let's try the scan line algorithm!
+
+            // need to have a real shape where the S goes
+            maze_a[start.x][start.y] = find_start_shape(maze_a, start);
+            long count = 0;
+
+            for (size_t y = 0; y < MAZE_SZ_Y; y++)
+            {
+                bool region = false;
+                char last_elbow = ' ';
+                for (size_t x = 0; x < MAZE_SZ_X; x++)
+                {
+                    if (maze_b[x][y] == '.')
+                    {
+                        if (region)
+                        {
+                            count++;
+                            maze_b[x][y] = 'I'; // for visual clarity when printing
+                        }
+                        else
+                            ; // just keep going...
+                    }
+                    else if (maze_b[x][y] == '#')
+                    {
+                        switch (maze_a[x][y])
+                        {
+                            case '|': region = !region; break;
+                            case '-': break;
+                            case 'F': last_elbow = 'F'; break;
+                            case 'L': last_elbow = 'L'; break;
+                            case 'J': if (last_elbow == 'F') region = !region; break;
+                            case '7': if (last_elbow == 'L') region = !region; break;
+                            default: throw std::logic_error("badly constructed maze_b 1");
+                        }
+
+                    }
+                    else
+                        throw std::logic_error("badly constructed maze_b 2");
+                }
+            }
+
+            return count;
+        }
     }
 };
