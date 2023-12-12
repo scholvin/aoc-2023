@@ -4,6 +4,7 @@
 #include <unordered_set>
 #include <iostream>
 #include <numeric>
+#include <cmath>
 
 namespace week2
 {
@@ -152,12 +153,12 @@ namespace week2
 
 //#define SMOL
 #ifdef SMOL
-    const size_t MAZE_SZ_X = 20;
-    const size_t MAZE_SZ_Y = 10;
+    const long MAZE_SZ_X = 20;
+    const long MAZE_SZ_Y = 10;
     const std::string day10file("../data/day10-smol2.dat");
 #else
-    const size_t MAZE_SZ_X = 140;
-    const size_t MAZE_SZ_Y = 140;
+    const long MAZE_SZ_X = 140;
+    const long MAZE_SZ_Y = 140;
     const std::string day10file("../data/day10.dat");
 #endif
 
@@ -170,7 +171,7 @@ namespace week2
 
     struct coord_t
     {
-        size_t x, y;
+        long x, y;
 
         bool operator == (const coord_t&) const = default;
     };
@@ -255,9 +256,9 @@ namespace week2
         readers::read_dense_2d_matrix(day10file, char_in_line(), maze_a);
 
         coord_t start;
-        for (size_t x = 0; x < MAZE_SZ_X; x++)
+        for (auto x = 0; x < MAZE_SZ_X; x++)
         {
-            for (size_t y = 0; y < MAZE_SZ_Y; y++)
+            for (auto y = 0; y < MAZE_SZ_Y; y++)
             {
                 if (maze_a[x][y] == 'S')
                 {
@@ -335,10 +336,10 @@ namespace week2
 
 //#define SMOL
 #ifdef SMOL
-    const size_t UNIVERSE_SZ = 10;
+    const long UNIVERSE_SZ = 10;
     const std::string day11file("../data/day11-smol.dat");
 #else
-    const size_t UNIVERSE_SZ = 140;
+    const long UNIVERSE_SZ = 140;
     const std::string day11file("../data/day11.dat");
 #endif
 
@@ -350,15 +351,15 @@ namespace week2
         readers::read_dense_2d_matrix(day11file, char_in_line(), universe);
 
         std::vector<coord_t> galaxies;
-        for (size_t x = 0; x < UNIVERSE_SZ; x++)
-            for (size_t y = 0; y < UNIVERSE_SZ; y++)
+        for (auto x = 0; x < UNIVERSE_SZ; x++)
+            for (auto y = 0; y < UNIVERSE_SZ; y++)
                 if (universe[x][y] == '#')
                     galaxies.push_back({x, y});
 
-        std::vector<size_t> empty_rows;
-        for (size_t y = 0; y < UNIVERSE_SZ; y++)
+        std::vector<long> empty_rows;
+        for (auto y = 0; y < UNIVERSE_SZ; y++)
         {
-            size_t x = 0;
+            auto x = 0;
             for (; x < UNIVERSE_SZ; x++)
                 if (universe[x][y] == '#')
                     break;
@@ -366,10 +367,10 @@ namespace week2
                 empty_rows.push_back(y);
         }
 
-        std::vector<size_t> empty_cols;
-        for (size_t x = 0; x < UNIVERSE_SZ; x++)
+        std::vector<long> empty_cols;
+        for (auto x = 0; x < UNIVERSE_SZ; x++)
         {
-            size_t y = 0;
+            auto y = 0;
             for ( ; y < UNIVERSE_SZ; y++)
                 if (universe[x][y] == '#')
                     break;
@@ -377,33 +378,35 @@ namespace week2
                 empty_cols.push_back(x);
         }
 
+        long delta = part == 'a' ? 1 : 999999;
+
         // expand spacetime
         for (auto it = empty_cols.begin(); it != empty_cols.end(); it++)
         {
             for (auto git = galaxies.begin(); git != galaxies.end(); git++)
             {
                 if (git->x > *it)
-                    (git->x)++; // move a galaxy right
+                    (git->x) += delta; // move a galaxy right
             }
             for (auto sub = it + 1; sub != empty_cols.end(); sub++)
-                (*sub)++; // move a blank column right
+                (*sub) += delta; // move a blank column right
         }
         for (auto it = empty_rows.begin(); it != empty_rows.end(); it++)
         {
             for (auto git = galaxies.begin(); git != galaxies.end(); git++)
             {
                 if (git->y > *it)
-                    (git->y)++; // move a galaxy down
+                    (git->y) += delta; // move a galaxy down
             }
             for (auto sub = it + 1; sub != empty_rows.end(); sub++)
-                (*sub)++; // move a blank row down
+                (*sub) += delta; // move a blank row down
         }
 
         // find the paths
         long sum = 0;
         for (auto git = galaxies.begin(); git != galaxies.end(); git++)
             for (auto sub = git+1; sub != galaxies.end(); sub++)
-                sum += abs(git->x - sub->x) + abs(git->y - sub->y);
+                sum += std::abs(git->x - sub->x) + std::abs(git->y - sub->y);
 
         return sum;
     }
