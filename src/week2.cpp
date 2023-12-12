@@ -332,4 +332,79 @@ namespace week2
             return count;
         }
     }
+
+//#define SMOL
+#ifdef SMOL
+    const size_t UNIVERSE_SZ = 10;
+    const std::string day11file("../data/day11-smol.dat");
+#else
+    const size_t UNIVERSE_SZ = 140;
+    const std::string day11file("../data/day11.dat");
+#endif
+
+    typedef std::array<std::array<char, UNIVERSE_SZ>, UNIVERSE_SZ> universe_t;
+
+    long day11(char part)
+    {
+        universe_t universe;
+        readers::read_dense_2d_matrix(day11file, char_in_line(), universe);
+
+        std::vector<coord_t> galaxies;
+        for (size_t x = 0; x < UNIVERSE_SZ; x++)
+            for (size_t y = 0; y < UNIVERSE_SZ; y++)
+                if (universe[x][y] == '#')
+                    galaxies.push_back({x, y});
+
+        std::vector<size_t> empty_rows;
+        for (size_t y = 0; y < UNIVERSE_SZ; y++)
+        {
+            size_t x = 0;
+            for (; x < UNIVERSE_SZ; x++)
+                if (universe[x][y] == '#')
+                    break;
+            if (x == UNIVERSE_SZ)
+                empty_rows.push_back(y);
+        }
+
+        std::vector<size_t> empty_cols;
+        for (size_t x = 0; x < UNIVERSE_SZ; x++)
+        {
+            size_t y = 0;
+            for ( ; y < UNIVERSE_SZ; y++)
+                if (universe[x][y] == '#')
+                    break;
+            if (y == UNIVERSE_SZ)
+                empty_cols.push_back(x);
+        }
+
+        // expand spacetime
+        for (auto it = empty_cols.begin(); it != empty_cols.end(); it++)
+        {
+            for (auto git = galaxies.begin(); git != galaxies.end(); git++)
+            {
+                if (git->x > *it)
+                    (git->x)++; // move a galaxy right
+            }
+            for (auto sub = it + 1; sub != empty_cols.end(); sub++)
+                (*sub)++; // move a blank column right
+        }
+        for (auto it = empty_rows.begin(); it != empty_rows.end(); it++)
+        {
+            for (auto git = galaxies.begin(); git != galaxies.end(); git++)
+            {
+                if (git->y > *it)
+                    (git->y)++; // move a galaxy down
+            }
+            for (auto sub = it + 1; sub != empty_rows.end(); sub++)
+                (*sub)++; // move a blank row down
+        }
+
+        // find the paths
+        long sum = 0;
+        for (auto git = galaxies.begin(); git != galaxies.end(); git++)
+            for (auto sub = git+1; sub != galaxies.end(); sub++)
+                sum += abs(git->x - sub->x) + abs(git->y - sub->y);
+
+        return sum;
+    }
 };
