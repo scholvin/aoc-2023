@@ -410,4 +410,76 @@ namespace week2
 
         return sum;
     }
+
+    struct day12_t
+    {
+        std::string record;
+        std::vector<size_t> groups;
+
+        day12_t(const std::string& line)
+        {
+            std::vector<std::string> parts = str::split(line, " ");
+            record = parts[0];
+            parts = str::split(parts[1], ",");
+            for (auto p: parts)
+                groups.push_back(boost::lexical_cast<size_t>(p));
+        }
+
+        bool verify(const std::string& candidate) const
+        {
+            size_t cur_grp = 0;
+            std::vector<size_t> cand_groups;
+            for (auto c: candidate)
+            {
+                if (cur_grp == 0 && c == '.')
+                    continue;
+                else if (cur_grp > 0 && c == '.')
+                {
+                    cand_groups.push_back(cur_grp);
+                    cur_grp = 0;
+                }
+                else if (c == '#')
+                    cur_grp++;
+            }
+            if (candidate[candidate.size()-1] == '#')
+                cand_groups.push_back(cur_grp);
+            return cand_groups == groups;
+        }
+
+        // this is slow and won't work for part b, it's O(2^n) where n is the number of ?'s
+        long possible() const
+        {
+            std::vector<size_t> bitmap; // maps bit position to the index of a ? in the record
+            for (size_t i = 0; i < record.size(); i++)
+                if (record[i] == '?')
+                    bitmap.push_back(i);
+
+            long r = 0;
+            for (size_t counter = 0; counter < (1u << bitmap.size()); counter++)
+            {
+                std::string t = record;
+                for (size_t i = 0; i < bitmap.size(); i++)
+                {
+                    t[bitmap[i]] = counter & (1u << i) ? '#' : '.';
+                }
+                if (verify(t))
+                    r++;
+            }
+            return r;
+        }
+    };
+
+    long day12a()
+    {
+        std::ifstream infile("../data/day12.dat");
+        std::string line;
+        long sum = 0;
+        while (std::getline(infile, line))
+        {
+            day12_t today(line);
+            sum += today.possible();
+        }
+
+        return sum;
+    }
 };
