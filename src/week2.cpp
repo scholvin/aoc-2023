@@ -546,13 +546,102 @@ namespace week2
 
             sum += calc12(record, groups);
         }
-
 #if 0
         std::cout << "memo size: " << memo.size()
                   << " buckets: " << memo.bucket_count()
                   << " load factor: " << memo.load_factor() << std::endl;
 #endif
-
         return sum;
     }
+
+    long day13(char part)
+    {
+        std::ifstream infile("../data/day13.dat");
+        std::string line;
+
+        typedef std::vector<std::string> mirror_t;
+        mirror_t mirror;
+        long result = 0;
+        bool done = false;
+        while (!done)
+        {
+            if (!std::getline(infile, line))
+                done = true;
+
+            if (line.size() > 0)
+            {
+                mirror.push_back(line);
+            }
+            else
+            {
+                // note that we are in [row][col] notation not [x][y]
+                // check columns
+                const int COLS = mirror[0].size();
+                const int ROWS = mirror.size();
+
+                // check for row symmetry
+                bool symmetric;
+                int r0 = 1;
+                for ( ; r0 < ROWS; r0++)
+                {
+                    symmetric = true;
+                    int rl = r0 - 1;
+                    int rh = r0;
+                    while (rl >= 0 && rh < ROWS && symmetric)
+                    {
+                        // does rl == rh?
+                        symmetric = symmetric && (mirror[rl] == mirror[rh]);
+                        rl--;
+                        rh++;
+                    }
+                    if (symmetric)
+                        break;
+                }
+                if (symmetric)
+                {
+                    // std::cout << "row symmetry at " << r0 << std::endl;
+                    result += r0 * 100;
+                    mirror.clear();
+                    continue;
+                }
+
+                int c0 = 1;
+                for ( ; c0 < COLS; c0++)
+                {
+                    symmetric = true;
+                    int cl = c0 - 1;
+                    int ch = c0;
+                    while (cl >= 0 && ch < COLS && symmetric)
+                    {
+                        // does cl == ch?
+                        bool colsym = true;
+                        for (int i = 0; i < ROWS; i++)
+                            colsym = colsym && (mirror[i][cl] == mirror[i][ch]);
+                        symmetric = symmetric && colsym;
+                        cl--;
+                        ch++;
+                    }
+                    if (symmetric)
+                        break;
+                }
+                if (symmetric)
+                {
+                    // std::cout << "column symmetry at " << c0 << std::endl;
+                    result += c0;
+                    mirror.clear();
+                    continue;
+                }
+                throw std::logic_error("bug - could not find row or column symmetry");
+            }
+        }
+
+        return result;
+    }
 };
+
+
+
+
+
+
+
