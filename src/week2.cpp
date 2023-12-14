@@ -480,50 +480,6 @@ namespace week2
     };
 #endif
 
-    long calc12(std::string record, group_t groups);
-
-    long pound(size_t next_group, std::string record, group_t groups)
-    {
-        // if the first is a pound, then the first n characters must be
-        // able to be treated as a pound, where n is the first group number
-        std::string this_group = record.substr(0, next_group);
-        std::replace(this_group.begin(), this_group.end(), '?', '#');
-
-        // if the next group can't fit all the damaged springs, then abort
-        if (this_group != std::string(next_group, '#'))
-            return 0;
-
-        // If the rest of the record is just the last group, then we're
-        // done and there's only one possibility
-        if (record.size() == next_group)
-        {
-            // make sure this is the last group
-            if (groups.size() == 1)
-                // we are valid
-                return 1;
-            else
-                // there's more groups, we can't make it work
-                return 0;
-        }
-
-        // make sure the character that follows. this group can be a separator
-        if (record[next_group] == '?' || record[next_group] == '.')
-        {
-            // it can be a separator, so skip it and reduce to the next group
-            group_t n(groups.size()-1);
-            std::copy(groups.begin()+1, groups.end(), n.begin());
-            return calc12(record.substr(next_group+1), n);
-        };
-
-        // can't be handled, there are no possibilities
-        return 0;
-    }
-
-    long dot(std::string record, group_t groups)
-    {
-        return calc12(record.substr(1), groups);
-    }
-
     // shameless lift from https://www.reddit.com/r/adventofcode/comments/18hbbxe/2023_day_12python_stepbystep_tutorial_with_bonus/
     long calc12(std::string record, group_t groups)
     {
@@ -544,6 +500,48 @@ namespace week2
 
         char next_char = record[0];
         size_t next_group = groups[0];
+
+        auto pound = [](size_t next_group, std::string record, group_t groups) -> long
+        {
+            // if the first is a pound, then the first n characters must be
+            // able to be treated as a pound, where n is the first group number
+            std::string this_group = record.substr(0, next_group);
+            std::replace(this_group.begin(), this_group.end(), '?', '#');
+
+            // if the next group can't fit all the damaged springs, then abort
+            if (this_group != std::string(next_group, '#'))
+                return 0;
+
+            // If the rest of the record is just the last group, then we're
+            // done and there's only one possibility
+            if (record.size() == next_group)
+            {
+                // make sure this is the last group
+                if (groups.size() == 1)
+                // we are valid
+                    return 1;
+                else
+                // there's more groups, we can't make it work
+                    return 0;
+            }
+
+            // make sure the character that follows. this group can be a separator
+            if (record[next_group] == '?' || record[next_group] == '.')
+            {
+                // it can be a separator, so skip it and reduce to the next group
+                group_t n(groups.size()-1);
+                std::copy(groups.begin()+1, groups.end(), n.begin());
+                return calc12(record.substr(next_group+1), n);
+            };
+
+            // can't be handled, there are no possibilities
+            return 0;
+        };
+
+        auto dot = [](std::string record, group_t groups) -> long
+        {
+            return calc12(record.substr(1), groups);
+        };
 
         long out = 0;
         if (next_char == '#')
