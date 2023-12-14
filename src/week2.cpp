@@ -411,7 +411,7 @@ namespace week2
         return sum;
     }
 
-    typedef std::vector<size_t> group_t;
+
 
 #if 0
     struct day12_t
@@ -481,6 +481,24 @@ namespace week2
 #endif
 
     // shameless lift from https://www.reddit.com/r/adventofcode/comments/18hbbxe/2023_day_12python_stepbystep_tutorial_with_bonus/
+    typedef std::vector<size_t> group_t;
+    typedef std::pair<std::string, group_t> key12_t;
+
+    struct key12_hash_t
+    {
+        std::size_t operator()(const key12_t& key) const noexcept
+        {
+            size_t h = std::hash<std::string>{}(key.first);
+            for (auto g: key.second)
+                h = h ^ (g << 1);
+            return h;
+        }
+    };
+
+    typedef std::unordered_map<key12_t, long, key12_hash_t> map12_t;
+
+    map12_t memo;
+
     long calc12(std::string record, group_t groups)
     {
         // Did we run out of groups? We might still be valid
@@ -518,10 +536,10 @@ namespace week2
             {
                 // make sure this is the last group
                 if (groups.size() == 1)
-                // we are valid
+                    // we are valid
                     return 1;
                 else
-                // there's more groups, we can't make it work
+                    // there's more groups, we can't make it work
                     return 0;
             }
 
@@ -531,7 +549,15 @@ namespace week2
                 // it can be a separator, so skip it and reduce to the next group
                 group_t n(groups.size()-1);
                 std::copy(groups.begin()+1, groups.end(), n.begin());
-                return calc12(record.substr(next_group+1), n);
+                // memoize
+                auto x = memo.find({record.substr(next_group+1), n});
+                if (x == memo.end())
+                {
+                    long y = calc12(record.substr(next_group+1), n);
+                    memo[{record.substr(next_group+1), n}] = y;
+                    return y;
+                }
+                return x->second;
             };
 
             // can't be handled, there are no possibilities
@@ -540,7 +566,16 @@ namespace week2
 
         auto dot = [](std::string record, group_t groups) -> long
         {
-            return calc12(record.substr(1), groups);
+            // memoize
+            auto x = memo.find({record.substr(1), groups});
+            if (x == memo.end())
+            {
+                long y = calc12(record.substr(1), groups);
+                memo[{record.substr(1), groups}] = y;
+                return y;
+            }
+            return x->second;
+            //return calc12(record.substr(1), groups);
         };
 
         long out = 0;
@@ -558,7 +593,7 @@ namespace week2
 
     long day12(char part)
     {
-        std::ifstream infile("../data/day12-smol.dat");
+        std::ifstream infile("../data/day12.dat");
         std::string line;
         long sum = 0;
         while (std::getline(infile, line))
