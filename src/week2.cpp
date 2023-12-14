@@ -411,75 +411,6 @@ namespace week2
         return sum;
     }
 
-
-
-#if 0
-    struct day12_t
-    {
-        std::string record;
-        group_t groups;
-
-        day12_t(const std::string& line, char part)
-        {
-            std::vector<std::string> parts = str::split(line, " ");
-            record = parts[0];
-            parts = str::split(parts[1], ",");
-            for (auto p: parts)
-                groups.push_back(boost::lexical_cast<size_t>(p));
-            if (part == 'b')
-            {
-                record = record + "?" + record + "?" + record + "?" + record + "?" + record;
-                auto ogroups = groups;
-                for (int i = 0; i < 4; i++)
-                    groups.insert(groups.end(), ogroups.begin(), ogroups.end());
-            }
-        }
-
-        bool verify(const std::string& candidate) const
-        {
-            size_t cur_grp = 0;
-            group_t cand_groups;
-            for (auto c: candidate)
-            {
-                if (cur_grp == 0 && c == '.')
-                    continue;
-                else if (cur_grp > 0 && c == '.')
-                {
-                    cand_groups.push_back(cur_grp);
-                    cur_grp = 0;
-                }
-                else if (c == '#')
-                    cur_grp++;
-            }
-            if (candidate[candidate.size()-1] == '#')
-                cand_groups.push_back(cur_grp);
-            return cand_groups == groups;
-        }
-
-        // this is slow and won't work for part b, it's O(2^n) where n is the number of ?'s
-        long possible() const
-        {
-            std::vector<size_t> bitmap; // maps bit position to the index of a ? in the record
-            for (size_t i = 0; i < record.size(); i++)
-                if (record[i] == '?')
-                    bitmap.push_back(i);
-
-            long r = 0;
-            for (size_t counter = 0; counter < (1u << bitmap.size()); counter++)
-            {
-                std::string t = record;
-                for (size_t i = 0; i < bitmap.size(); i++)
-                {
-                    t[bitmap[i]] = counter & (1u << i) ? '#' : '.';
-                }
-                if (verify(t))
-                    r++;
-            }
-            return r;
-        }
-    };
-#endif
-
     // shameless lift from https://www.reddit.com/r/adventofcode/comments/18hbbxe/2023_day_12python_stepbystep_tutorial_with_bonus/
     typedef std::vector<size_t> group_t;
     typedef std::pair<std::string, group_t> key12_t;
@@ -489,8 +420,9 @@ namespace week2
         std::size_t operator()(const key12_t& key) const noexcept
         {
             size_t h = std::hash<std::string>{}(key.first);
+            int i = 1;
             for (auto g: key.second)
-                h = h ^ (g << 1);
+                h = h ^ (g << i++);
             return h;
         }
     };
@@ -499,7 +431,7 @@ namespace week2
 
     map12_t memo;
 
-    long calc12(std::string record, group_t groups)
+    long calc12(const std::string& record, const group_t& groups)
     {
         // Did we run out of groups? We might still be valid
         if (groups.size() == 0)
@@ -519,7 +451,7 @@ namespace week2
         char next_char = record[0];
         size_t next_group = groups[0];
 
-        auto pound = [](size_t next_group, std::string record, group_t groups) -> long
+        auto pound = [](size_t next_group, const std::string& record, const group_t& groups) -> long
         {
             // if the first is a pound, then the first n characters must be
             // able to be treated as a pound, where n is the first group number
@@ -564,7 +496,7 @@ namespace week2
             return 0;
         };
 
-        auto dot = [](std::string record, group_t groups) -> long
+        auto dot = [](const std::string& record, const group_t& groups) -> long
         {
             // memoize
             auto x = memo.find({record.substr(1), groups});
@@ -575,7 +507,6 @@ namespace week2
                 return y;
             }
             return x->second;
-            //return calc12(record.substr(1), groups);
         };
 
         long out = 0;
@@ -613,10 +544,14 @@ namespace week2
                     groups.insert(groups.end(), ogroups.begin(), ogroups.end());
             }
 
-            long s = calc12(record, groups);
-            std::cout << line << "  -->  " << s << std::endl;
-            sum += s;
+            sum += calc12(record, groups);
         }
+
+#if 0
+        std::cout << "memo size: " << memo.size()
+                  << " buckets: " << memo.bucket_count()
+                  << " load factor: " << memo.load_factor() << std::endl;
+#endif
 
         return sum;
     }
