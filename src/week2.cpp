@@ -411,24 +411,34 @@ namespace week2
         return sum;
     }
 
+    typedef std::vector<size_t> group_t;
+
+#if 0
     struct day12_t
     {
         std::string record;
-        std::vector<size_t> groups;
+        group_t groups;
 
-        day12_t(const std::string& line)
+        day12_t(const std::string& line, char part)
         {
             std::vector<std::string> parts = str::split(line, " ");
             record = parts[0];
             parts = str::split(parts[1], ",");
             for (auto p: parts)
                 groups.push_back(boost::lexical_cast<size_t>(p));
+            if (part == 'b')
+            {
+                record = record + "?" + record + "?" + record + "?" + record + "?" + record;
+                auto ogroups = groups;
+                for (int i = 0; i < 4; i++)
+                    groups.insert(groups.end(), ogroups.begin(), ogroups.end());
+            }
         }
 
         bool verify(const std::string& candidate) const
         {
             size_t cur_grp = 0;
-            std::vector<size_t> cand_groups;
+            group_t cand_groups;
             for (auto c: candidate)
             {
                 if (cur_grp == 0 && c == '.')
@@ -468,16 +478,111 @@ namespace week2
             return r;
         }
     };
+#endif
 
-    long day12a()
+    long calc12(std::string record, group_t groups);
+
+    long pound(size_t next_group, std::string record, group_t groups)
     {
-        std::ifstream infile("../data/day12.dat");
+        // if the first is a pound, then the first n characters must be
+        // able to be treated as a pound, where n is the first group number
+        std::string this_group = record.substr(0, next_group);
+        std::replace(this_group.begin(), this_group.end(), '?', '#');
+
+        // if the next group can't fit all the damaged springs, then abort
+        if (this_group != std::string(next_group, '#'))
+            return 0;
+
+        // If the rest of the record is just the last group, then we're
+        // done and there's only one possibility
+        if (record.size() == next_group)
+        {
+            // make sure this is the last group
+            if (groups.size() == 1)
+                // we are valid
+                return 1;
+            else
+                // there's more groups, we can't make it work
+                return 0;
+        }
+
+        // make sure the character that follows. this group can be a separator
+        if (record[next_group] == '?' || record[next_group] == '.')
+        {
+            // it can be a separator, so skip it and reduce to the next group
+            group_t n(groups.size()-1);
+            std::copy(groups.begin()+1, groups.end(), n.begin());
+            return calc12(record.substr(next_group+1), n);
+        };
+
+        // can't be handled, there are no possibilities
+        return 0;
+    }
+
+    long dot(std::string record, group_t groups)
+    {
+        return calc12(record.substr(1), groups);
+    }
+
+    // shameless lift from https://www.reddit.com/r/adventofcode/comments/18hbbxe/2023_day_12python_stepbystep_tutorial_with_bonus/
+    long calc12(std::string record, group_t groups)
+    {
+        // Did we run out of groups? We might still be valid
+        if (groups.size() == 0)
+        {
+            if (record.find('#') == std::string::npos)
+                // This will return true even if record is empty, which is valid
+                return 1;
+            else
+                // More damaged springs that we can't fit
+                return 0;
+        }
+
+        // There are more groups, but no more record
+        if (record.size() == 0)
+            return 0;
+
+        char next_char = record[0];
+        size_t next_group = groups[0];
+
+        long out = 0;
+        if (next_char == '#')
+            out = pound(next_group, record, groups);
+        else if (next_char == '.')
+            out = dot(record, groups);
+        else if (next_char == '?')
+            out = dot(record, groups) + pound(next_group, record, groups);
+        else
+            throw std::logic_error("serious bug");
+
+        return out;
+    }
+
+    long day12(char part)
+    {
+        std::ifstream infile("../data/day12-smol.dat");
         std::string line;
         long sum = 0;
         while (std::getline(infile, line))
         {
-            day12_t today(line);
-            sum += today.possible();
+            std::vector<std::string> parts = str::split(line, " ");
+            std::string record = parts[0];
+            group_t groups;
+            parts = str::split(parts[1], ",");
+            for (auto p: parts)
+                groups.push_back(boost::lexical_cast<size_t>(p));
+
+            if (part == 'b')
+            {
+                record = record + "?" + record + "?" + record + "?" + record + "?" + record;
+                auto ogroups = groups;
+                for (int i = 0; i < 4; i++)
+                    groups.insert(groups.end(), ogroups.begin(), ogroups.end());
+            }
+
+            long s = calc12(record, groups);
+            std::cout << line << "  -->  " << s << std::endl;
+            sum += s;
         }
 
         return sum;
