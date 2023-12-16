@@ -111,7 +111,6 @@ namespace week2
             return true;
         };
 
-
         for (auto seq: sequences)
         {
             // build the data structure
@@ -554,7 +553,7 @@ namespace week2
         return sum;
     }
 
-    typedef std::vector<std::string> mirror_t;
+    typedef std::vector<std::string> mirror13_t;
 
     struct reflection_t
     {
@@ -564,7 +563,7 @@ namespace week2
         bool operator ==(const reflection_t& other) const = default;
     };
 
-    void solve13(const mirror_t& mirror, std::vector<reflection_t>& solutions)
+    void solve13(const mirror13_t& mirror, std::vector<reflection_t>& solutions)
     {
         solutions.clear();
 
@@ -626,7 +625,7 @@ namespace week2
         long result = 0;
         while (infile.peek() != EOF)
         {
-            mirror_t mirror;
+            mirror13_t mirror;
             while (std::getline(infile, line))
             {
                 if (line.size() > 0)
@@ -663,7 +662,7 @@ namespace week2
                 {
                     for (size_t c = 0; c < mirror[0].size(); c++)
                     {
-                        mirror_t mcopy = mirror;
+                        mirror13_t mcopy = mirror;
                         mcopy[r][c] = (mcopy[r][c] == '#' ? '.' : '#');
                         solve13(mcopy, solutions);
                         for (auto s: solutions)
@@ -686,6 +685,65 @@ finish:
         }
 
         return result;
+    }
+
+//#define SMOL
+#ifdef SMOL
+    const long MIRROR_SZ = 10;
+    const std::string day14file("../data/day14-smol.dat");
+#else
+    const long MIRROR_SZ = 100;
+    const std::string day14file("../data/day14.dat");
+#endif
+
+    typedef std::array<std::array<char, MIRROR_SZ>, MIRROR_SZ> mirror14_t;
+
+    void print(const mirror14_t& mirror)
+    {
+        for (size_t y = 0; y < MIRROR_SZ; y++)
+        {
+            for (size_t x = 0; x < MIRROR_SZ; x++)
+            {
+                std::cout << mirror[x][y];
+            }
+            std::cout << std::endl;
+        }
+    }
+
+    long day14(char part)
+    {
+        mirror14_t mirror;
+        readers::read_dense_2d_matrix(day14file, char_in_line(), mirror);
+
+        print(mirror);
+        std::cout << std::endl;
+        bool moved = true;
+        while (moved)
+        {
+            moved = false;
+            // north
+            for (size_t y = 1; y < MIRROR_SZ; y++)
+            {
+                for (size_t x = 0; x < MIRROR_SZ; x++)
+                {
+                    if (mirror[x][y] == 'O' && mirror[x][y-1] == '.')
+                    {
+                        moved = true;
+                        mirror[x][y] = '.';
+                        mirror[x][y-1] = 'O';
+                    }
+                }
+            }
+        }
+        print(mirror);
+
+        long load = 0;
+        for (size_t x = 0; x < MIRROR_SZ; x++)
+            for (size_t y = 0; y < MIRROR_SZ; y++)
+                if (mirror[x][y] == 'O')
+                    load += (MIRROR_SZ - y);
+
+        return load;
     }
 };
 
