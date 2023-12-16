@@ -554,84 +554,134 @@ namespace week2
         return sum;
     }
 
+    typedef std::vector<std::string> mirror_t;
+
+    struct reflection_t
+    {
+        char type; // 'R' or 'C';
+        int position;
+
+        bool operator ==(const reflection_t& other) const = default;
+    };
+
+    void solve13(const mirror_t& mirror, std::vector<reflection_t>& solutions)
+    {
+        solutions.clear();
+
+        // note that we are in [row][col] notation not [x][y]
+        const int COLS = mirror[0].size();
+        const int ROWS = mirror.size();
+
+        // check for row symmetry
+        bool symmetric;
+        int r0 = 1;
+        for ( ; r0 < ROWS; r0++)
+        {
+            symmetric = true;
+            int rl = r0 - 1;
+            int rh = r0;
+            while (rl >= 0 && rh < ROWS && symmetric)
+            {
+                // does rl == rh?
+                symmetric = symmetric && (mirror[rl] == mirror[rh]);
+                rl--;
+                rh++;
+            }
+            if (symmetric)
+            {
+                solutions.push_back({ 'R', r0 });
+                // std::cout << "solution at " << solutions.back().type << " " << solutions.back().position << std::endl;
+            }
+        }
+
+        int c0 = 1;
+        for ( ; c0 < COLS; c0++)
+        {
+            symmetric = true;
+            int cl = c0 - 1;
+            int ch = c0;
+            while (cl >= 0 && ch < COLS && symmetric)
+            {
+                // does cl == ch?
+                bool colsym = true;
+                for (int i = 0; i < ROWS; i++)
+                    colsym = colsym && (mirror[i][cl] == mirror[i][ch]);
+                symmetric = symmetric && colsym;
+                cl--;
+                ch++;
+            }
+            if (symmetric)
+            {
+                solutions.push_back({ 'C', c0 });
+                // std::cout << "solution at " << solutions.back().type << " " << solutions.back().position << std::endl;
+            }
+        }
+    }
+
     long day13(char part)
     {
         std::ifstream infile("../data/day13.dat");
         std::string line;
 
-        typedef std::vector<std::string> mirror_t;
-        mirror_t mirror;
         long result = 0;
-        bool done = false;
-        while (!done)
+        while (infile.peek() != EOF)
         {
-            if (!std::getline(infile, line))
-                done = true;
-
-            if (line.size() > 0)
+            mirror_t mirror;
+            while (std::getline(infile, line))
             {
-                mirror.push_back(line);
+                if (line.size() > 0)
+                    mirror.push_back(line);
+                else
+                    break;
+            }
+
+            if (part == 'a')
+            {
+                std::vector<reflection_t> solutions;
+                solve13(mirror, solutions);
+                if (solutions.size() == 1)
+                {
+                    if (solutions.back().type == 'C')
+                        result += solutions.back().position;
+                    else
+                        result += solutions.back().position * 100;
+                }
+                else
+                    throw std::logic_error("unexpected solution space found in part a: " + boost::lexical_cast<std::string>(solutions.size()));
             }
             else
             {
-                // note that we are in [row][col] notation not [x][y]
-                // check columns
-                const int COLS = mirror[0].size();
-                const int ROWS = mirror.size();
+                std::vector<reflection_t> solutions;
+                reflection_t reference;
+                solve13(mirror, solutions);
+                if (solutions.size() == 1)
+                    reference = solutions.back();
+                else
+                    throw std::logic_error("unexpected solution space found in part b: " + boost::lexical_cast<std::string>(solutions.size()));
 
-                // check for row symmetry
-                bool symmetric;
-                int r0 = 1;
-                for ( ; r0 < ROWS; r0++)
+                for (size_t r = 0; r < mirror.size(); r++)
                 {
-                    symmetric = true;
-                    int rl = r0 - 1;
-                    int rh = r0;
-                    while (rl >= 0 && rh < ROWS && symmetric)
+                    for (size_t c = 0; c < mirror[0].size(); c++)
                     {
-                        // does rl == rh?
-                        symmetric = symmetric && (mirror[rl] == mirror[rh]);
-                        rl--;
-                        rh++;
+                        mirror_t mcopy = mirror;
+                        mcopy[r][c] = (mcopy[r][c] == '#' ? '.' : '#');
+                        solve13(mcopy, solutions);
+                        for (auto s: solutions)
+                        {
+                            if (s != reference)
+                            {
+                                if (s.type == 'C')
+                                    result += s.position;
+                                else
+                                    result += s.position * 100;
+                                goto finish;
+                            }
+                        }
                     }
-                    if (symmetric)
-                        break;
                 }
-                if (symmetric)
-                {
-                    // std::cout << "row symmetry at " << r0 << std::endl;
-                    result += r0 * 100;
-                    mirror.clear();
-                    continue;
-                }
-
-                int c0 = 1;
-                for ( ; c0 < COLS; c0++)
-                {
-                    symmetric = true;
-                    int cl = c0 - 1;
-                    int ch = c0;
-                    while (cl >= 0 && ch < COLS && symmetric)
-                    {
-                        // does cl == ch?
-                        bool colsym = true;
-                        for (int i = 0; i < ROWS; i++)
-                            colsym = colsym && (mirror[i][cl] == mirror[i][ch]);
-                        symmetric = symmetric && colsym;
-                        cl--;
-                        ch++;
-                    }
-                    if (symmetric)
-                        break;
-                }
-                if (symmetric)
-                {
-                    // std::cout << "column symmetry at " << c0 << std::endl;
-                    result += c0;
-                    mirror.clear();
-                    continue;
-                }
-                throw std::logic_error("bug - could not find row or column symmetry");
+                throw std::logic_error("no altered solutions found in part b");
+finish:
+                ;
             }
         }
 
