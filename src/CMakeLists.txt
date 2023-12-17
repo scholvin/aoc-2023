@@ -16,4 +16,4 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 add_compile_options(-std=c++20 -Wall -Wno-deprecated)
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb")
 
-add_executable(aoc-2023 main.cpp runner.cpp util.cpp week1.cpp week2.cpp)
+add_executable(aoc-2023 main.cpp runner.cpp util.cpp week1.cpp week2.cpp week3.cpp)

@@ -872,7 +872,6 @@ finish:
                 }
                 hashes.push_back({h, l});
             }
-
 #if 0
             for (size_t i = 0; i < hashes.size(); i++)
             {
@@ -886,10 +885,3 @@ finish:
         }
     }
 };
-
-
-
-
-
-
-
