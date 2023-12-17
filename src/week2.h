@@ -27,5 +27,6 @@ namespace week2
         { "13a", std::bind(&day13, 'a') },
         { "13b", std::bind(&day13, 'b') },
         { "14a", std::bind(&day14, 'a') },
+        { "14b", std::bind(&day14, 'b') }
     };
 };

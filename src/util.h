@@ -140,5 +140,5 @@ struct str
         boost::split(v, s, boost::is_any_of(splitters), boost::algorithm::token_compress_on);
         return v;
     }
-
 };
+

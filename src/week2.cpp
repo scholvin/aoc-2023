@@ -5,6 +5,7 @@
 #include <iostream>
 #include <numeric>
 #include <cmath>
+#include <boost/functional/hash.hpp>
 
 namespace week2
 {
@@ -698,6 +699,15 @@ finish:
 
     typedef std::array<std::array<char, MIRROR_SZ>, MIRROR_SZ> mirror14_t;
 
+    size_t hash(const mirror14_t& mirror)
+    {
+        std::string s;
+        for (size_t x = 0; x < MIRROR_SZ; x++)
+            for (size_t y = 0; y < MIRROR_SZ; y++)
+                s += mirror[x][y];
+        return std::hash<std::string>{}(s);
+    }
+
     void print(const mirror14_t& mirror)
     {
         for (size_t y = 0; y < MIRROR_SZ; y++)
@@ -708,6 +718,7 @@ finish:
             }
             std::cout << std::endl;
         }
+        std::cout << std::hex << hash(mirror) << std::endl << std::endl;
     }
 
     long day14(char part)
@@ -715,35 +726,164 @@ finish:
         mirror14_t mirror;
         readers::read_dense_2d_matrix(day14file, char_in_line(), mirror);
 
-        print(mirror);
-        std::cout << std::endl;
-        bool moved = true;
-        while (moved)
+        auto north = [&]()
         {
-            moved = false;
-            // north
-            for (size_t y = 1; y < MIRROR_SZ; y++)
+            bool moved = true;
+            while (moved)
             {
-                for (size_t x = 0; x < MIRROR_SZ; x++)
+                moved = false;
+                for (size_t y = 1; y < MIRROR_SZ; y++)
                 {
-                    if (mirror[x][y] == 'O' && mirror[x][y-1] == '.')
+                    for (size_t x = 0; x < MIRROR_SZ; x++)
                     {
-                        moved = true;
-                        mirror[x][y] = '.';
-                        mirror[x][y-1] = 'O';
+                        if (mirror[x][y] == 'O' && mirror[x][y-1] == '.')
+                        {
+                            moved = true;
+                            mirror[x][y] = '.';
+                            mirror[x][y-1] = 'O';
+                        }
                     }
                 }
             }
+        };
+
+        auto south = [&]()
+        {
+            bool moved = true;
+            while (moved)
+            {
+                moved = false;
+                for (int y = MIRROR_SZ - 2; y >= 0; y--)
+                {
+                    for (size_t x = 0; x < MIRROR_SZ; x++)
+                    {
+                        if (mirror[x][y] == 'O' && mirror[x][y+1] == '.')
+                        {
+                            moved = true;
+                            mirror[x][y] = '.';
+                            mirror[x][y+1] = 'O';
+                        }
+                    }
+                }
+            }
+        };
+
+        auto east = [&]()
+        {
+            bool moved = true;
+            while (moved)
+            {
+                moved = false;
+                for (int x = MIRROR_SZ - 2; x >= 0; x--)
+                {
+                    for (size_t y = 0; y < MIRROR_SZ; y++)
+                    {
+                        if (mirror[x][y] == 'O' && mirror[x+1][y] == '.')
+                        {
+                            moved = true;
+                            mirror[x][y] = '.';
+                            mirror[x+1][y] = 'O';
+                        }
+                    }
+                }
+            }
+        };
+
+        auto west = [&]()
+        {
+            bool moved = true;
+            while (moved)
+            {
+                moved = false;
+                for (size_t x = 1 ; x < MIRROR_SZ; x++)
+                {
+                    for (size_t y = 0; y < MIRROR_SZ; y++)
+                    {
+                        if (mirror[x][y] == 'O' && mirror[x-1][y] == '.')
+                        {
+                            moved = true;
+                            mirror[x][y] = '.';
+                            mirror[x-1][y] = 'O';
+                        }
+                    }
+                }
+            }
+        };
+
+        auto load = [&]() -> long
+        {
+            long load = 0;
+            for (size_t x = 0; x < MIRROR_SZ; x++)
+                for (size_t y = 0; y < MIRROR_SZ; y++)
+                    if (mirror[x][y] == 'O')
+                        load += (MIRROR_SZ - y);
+            return load;
+        };
+
+        if (part == 'a')
+        {
+            north();
+            return load();
         }
-        print(mirror);
+        else
+        {
+            // do one cycle first
+            north();
+            west();
+            south();
+            east();
 
-        long load = 0;
-        for (size_t x = 0; x < MIRROR_SZ; x++)
-            for (size_t y = 0; y < MIRROR_SZ; y++)
-                if (mirror[x][y] == 'O')
-                    load += (MIRROR_SZ - y);
+            struct answer_t
+            {
+                size_t hash;
+                long load;
+            };
 
-        return load;
+            /*
+                strategy here is to hash each map (and store the load)
+                and every time we encounter a new one, we'll see if we've
+                seen it before. if so, we've found the start of the loop.
+                note that this is O(n^2) to search the loop, but the real
+                expense is in the constants, since n is ~175
+            */
+            std::vector<answer_t> hashes;
+            hashes.push_back({hash(mirror), load()});
+
+            size_t cycle = 0;
+            size_t offset = 0;
+
+            while (true)
+            {
+                north();
+                west();
+                south();
+                east();
+
+                size_t h = hash(mirror);
+                long l = load();
+                auto it = std::find_if(hashes.begin(), hashes.end(), [&](const answer_t& a) { return a.hash == h; });
+
+                if (it != hashes.end())
+                {
+                    cycle = std::distance(it, hashes.end());
+                    offset = std::distance(hashes.begin(), it);
+                    hashes.push_back({h, l}); // just for pretty printing at the end
+                    break;
+                }
+                hashes.push_back({h, l});
+            }
+
+#if 0
+            for (size_t i = 0; i < hashes.size(); i++)
+            {
+                std::cout << i << " " << hashes[i].hash << " " << hashes[i].load << std::endl;
+            }
+            std::cout << "cycle: " << cycle << " offset: " << offset << std::endl;
+#endif
+            const long CYCLES = 1000000000 - 1; // zero based
+
+            return hashes[(CYCLES - offset) % cycle + offset].load;
+        }
     }
 };
 
