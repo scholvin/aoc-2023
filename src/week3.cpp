@@ -2,6 +2,7 @@
 #include "util.h"
 
 #include <iostream>
+#include <unordered_set>
 
 namespace week3
 {
@@ -92,5 +93,150 @@ namespace week3
             }
             return power;
         }
+    }
+
+//#define SMOL
+#ifdef SMOL
+    const long CONTRAPTION_SZ = 10;
+    const std::string day16file("../data/day16-smol.dat");
+#else
+    const long CONTRAPTION_SZ = 110;
+    const std::string day16file("../data/day16.dat");
+#endif
+    typedef std::array<std::array<char, CONTRAPTION_SZ>, CONTRAPTION_SZ> contraption_t;
+
+    struct char_in_line
+    {
+        char operator()(char c) { return c; }
+    };
+
+    struct coord_t
+    {
+        long x, y;
+
+        bool operator == (const coord_t&) const = default;
+    };
+
+    struct coord_hash_t
+    {
+        std::size_t operator()(const coord_t& key) const noexcept
+        {
+            return std::hash<long>{}(key.x) ^ (std::hash<long>{}(key.y) << 8);
+        }
+    };
+
+    enum direction_t { north, south, east, west };
+
+    struct beam_t
+    {
+        coord_t position;
+        direction_t dir;
+
+        bool operator == (const beam_t&) const = default;
+    };
+
+    struct beam_hash_t
+    {
+        std::size_t operator()(const beam_t& key) const noexcept
+        {
+            size_t h = std::hash<long>{}(key.position.x) ^ (std::hash<int>{}(key.dir) << 8);
+            return h ^ (std::hash<long>{}(key.position.y) << 16);
+        }
+    };
+
+    typedef std::unordered_set<beam_t, beam_hash_t> visited_t;
+
+    void process_beam(beam_t& beam, const contraption_t& contraption, visited_t& visited)
+    {
+        auto valid = [](const coord_t& p) -> bool
+        {
+            return (p.x >= 0 && p.x < CONTRAPTION_SZ && p.y >= 0 && p.y < CONTRAPTION_SZ);
+        };
+
+        auto advance = [](beam_t& beam)
+        {
+            switch (beam.dir)
+            {
+                case north: beam.position.y--; break;
+                case south: beam.position.y++; break;
+                case east: beam.position.x++; break;
+                case west: beam.position.x--; break;
+            }
+        };
+
+        // const char* pos = "NSEW";
+
+        while (valid(beam.position))
+        {
+            // std::cout << beam.position.x << "," << beam.position.y << " " << pos[(int)beam.dir] << std::endl;
+            if (visited.find(beam) != visited.end())
+                break;
+            visited.insert(beam);
+            switch (contraption[beam.position.x][beam.position.y])
+            {
+                case '.':
+                    advance(beam);
+                    break;
+                case '/':
+                    if (beam.dir == east) beam.dir = north;
+                    else if (beam.dir == north) beam.dir = east;
+                    else if (beam.dir == west) beam.dir = south;
+                    else if (beam.dir == south) beam.dir = west;
+                    advance(beam);
+                    break;
+                case '\\':
+                    if (beam.dir == east) beam.dir = south;
+                    else if (beam.dir == north) beam.dir = west;
+                    else if (beam.dir == west) beam.dir = north;
+                    else if (beam.dir == south) beam.dir = east;
+                    advance(beam);
+                    break;
+                case '-':
+                    if (beam.dir == east || beam.dir == west)
+                        advance(beam);
+                    else
+                    {
+                        // existing beam goes west, create new beam east
+                        beam_t newbeam{beam.position, west};
+                        advance(newbeam);
+                        process_beam(newbeam, contraption, visited);
+                        beam.dir = east;
+                        advance(beam);
+                    }
+                    break;
+                case '|':
+                    if (beam.dir == north || beam.dir == south)
+                        advance(beam);
+                    else
+                    {
+                        // existing beam goes north, create new beam south
+                        beam_t newbeam{beam.position, south};
+                        advance(newbeam);
+                        process_beam(newbeam, contraption, visited);
+                        beam.dir = north;
+                        advance(beam);
+                    }
+                    break;
+            }
+        }
+    }
+
+    long day16a()
+    {
+        contraption_t contraption;
+        readers::read_dense_2d_matrix(day16file, char_in_line(), contraption);
+        std::unordered_set<beam_t, beam_hash_t> visited;
+        beam_t beam{{0, 0}, east};
+
+        process_beam(beam, contraption, visited);
+
+        // gotta count unique positions now
+        std::unordered_set<coord_t, coord_hash_t> unique;
+        for (auto v: visited)
+        {
+            unique.insert(v.position);
+        }
+
+        return unique.size();
     }
 };
