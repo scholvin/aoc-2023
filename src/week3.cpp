@@ -221,22 +221,60 @@ namespace week3
         }
     }
 
-    long day16a()
+    long day16(char part)
     {
         contraption_t contraption;
         readers::read_dense_2d_matrix(day16file, char_in_line(), contraption);
-        std::unordered_set<beam_t, beam_hash_t> visited;
-        beam_t beam{{0, 0}, east};
 
-        process_beam(beam, contraption, visited);
-
-        // gotta count unique positions now
-        std::unordered_set<coord_t, coord_hash_t> unique;
-        for (auto v: visited)
+        auto wrap = [&](beam_t& beam) -> long
         {
-            unique.insert(v.position);
-        }
+            std::unordered_set<beam_t, beam_hash_t> visited;
+            process_beam(beam, contraption, visited);
 
-        return unique.size();
+            // gotta count unique positions now
+            std::unordered_set<coord_t, coord_hash_t> unique;
+            for (auto v: visited)
+            {
+                unique.insert(v.position);
+            }
+            return unique.size();
+        };
+
+        if (part == 'a')
+        {
+            beam_t beam({{0, 0}, east});
+            return wrap(beam);
+        }
+        else
+        {
+            long max = 0;
+
+            // try all eastbound from left
+            for (long y = 0; y < CONTRAPTION_SZ; y++)
+            {
+                beam_t beam({{0, y}, east});
+                max = std::max(wrap(beam), max);
+            }
+            // try all southbound from top
+            for (long x = 0; x < CONTRAPTION_SZ; x++)
+            {
+                beam_t beam({{x, 0}, south});
+                max = std::max(wrap(beam), max);
+            }
+            // try all westbound from right
+            for (long y = 0; y < CONTRAPTION_SZ; y++)
+            {
+                beam_t beam({{CONTRAPTION_SZ-1, y}, west});
+                max = std::max(wrap(beam), max);
+            }
+            // try all northbound from bottom
+            for (long x = 0; x < CONTRAPTION_SZ; x++)
+            {
+                beam_t beam({{x, CONTRAPTION_SZ-1}, north});
+                max = std::max(wrap(beam), max);
+            }
+
+            return max;
+        }
     }
 };
